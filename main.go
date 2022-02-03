@@ -4,7 +4,9 @@ import (
 	"context"
 	"danmu/repository"
 	"danmu/ws"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +15,7 @@ import (
 )
 
 func main() {
+	loadConfig()
 	go ws.WebsocketManager.Start()
 	//go ws.WebsocketManager.SendService()
 	go ws.WebsocketManager.SendService()
@@ -72,4 +75,14 @@ func main() {
 		log.Fatal("Server Shutdown Error:", err)
 	}
 	log.Println("Server Shutdown")
+}
+
+func loadConfig() {
+	viper.AddConfigPath("configs/")
+	viper.SetConfigName("settings-prod")
+	viper.SetConfigType("yaml")
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %w \n", err))
+	}
 }

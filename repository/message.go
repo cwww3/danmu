@@ -2,6 +2,8 @@ package repository
 
 import (
 	"danmu/model"
+	"fmt"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -20,7 +22,11 @@ func GetMessageRepository() MessageRepository {
 
 func SetUpMessageRepository() {
 	var err error
-	messageRepository.db, err = gorm.Open(mysql.Open("root:12345678@tcp(127.0.0.1:3306)/live?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{
+	user := viper.GetString("mysql.user")
+	password := viper.GetString("mysql.password")
+	dbName := viper.GetString("mysql.dbName")
+	dsn := fmt.Sprintf("%v:%v@tcp(127.0.0.1:3306)/%v?charset=utf8mb4&parseTime=True&loc=Local",user,password,dbName)
+	messageRepository.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NamingStrategy:schema.NamingStrategy{SingularTable: true},
 	})
 	if err != nil {
