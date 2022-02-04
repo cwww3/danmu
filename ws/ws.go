@@ -17,37 +17,37 @@ import (
 
 // Manager 所有 websocket 信息
 type Manager struct {
-	Group map[string]map[string]*Client
+	Group                   map[string]map[string]*Client
 	groupCount, clientCount uint
-	Lock sync.Mutex
-	Register, UnRegister chan *Client
-	Message	chan *MessageData
-	GroupMessage chan *GroupMessageData
-	BroadCastMessage chan *BroadCastMessageData
+	Lock                    sync.Mutex
+	Register, UnRegister    chan *Client
+	Message                 chan *MessageData
+	GroupMessage            chan *GroupMessageData
+	BroadCastMessage        chan *BroadCastMessageData
 }
 
 // Client 单个 websocket 信息
 type Client struct {
 	Id, Group string
-	Socket *websocket.Conn
+	Socket    *websocket.Conn
 	Message   chan []byte
 }
 
 // messageData 单个发送数据信息
 type MessageData struct {
 	Id, Group string
-	Message    []byte
+	Message   []byte
 }
 
 // groupMessageData 组广播数据信息
 type GroupMessageData struct {
-	Group string
-	Message    []byte
+	Group   string
+	Message []byte
 }
 
 // 广播发送数据信息
 type BroadCastMessageData struct {
-	Message    []byte
+	Message []byte
 }
 
 // 读信息，从 websocket 连接直接读取数据
@@ -63,21 +63,24 @@ func (c *Client) Read() {
 	for {
 		messageType, message, err := c.Socket.ReadMessage()
 		if err != nil || messageType == websocket.CloseMessage {
+			if err != nil {
+				log.Println("read err=%v", err)
+			}
 			break
 		}
 		log.Printf("client [%s] receive message: %s", c.Id, string(message))
 		// TODO 获取room 持久化
 		var msg model.Message
-		if err = json.Unmarshal(message,&msg);err != nil {
-			log.Println("unmarshal msg failed err=%v",err)
+		if err = json.Unmarshal(message, &msg); err != nil {
+			log.Println("unmarshal msg failed err=%v", err)
 			continue
 		}
 		err = repository.GetMessageRepository().SaveRoomMessage(&msg)
 		if err != nil {
-			log.Println("insert msg failed msg=%+v err=%v",msg,err)
+			log.Println("insert msg failed msg=%+v err=%v", msg, err)
 		}
 
-		WebsocketManager.SendGroup("default",message)
+		WebsocketManager.SendGroup("default", message)
 	}
 }
 
@@ -200,9 +203,9 @@ func (manager *Manager) SendAllService() {
 // 向指定的 client 发送数据
 func (manager *Manager) Send(id string, group string, message []byte) {
 	data := &MessageData{
-		Id: id,
-		Group: group,
-		Message:    message,
+		Id:      id,
+		Group:   group,
+		Message: message,
 	}
 	manager.Message <- data
 }
@@ -210,8 +213,8 @@ func (manager *Manager) Send(id string, group string, message []byte) {
 // 向指定的 Group 广播
 func (manager *Manager) SendGroup(group string, message []byte) {
 	data := &GroupMessageData{
-		Group: group,
-		Message:    message,
+		Group:   group,
+		Message: message,
 	}
 	manager.GroupMessage <- data
 }
@@ -219,7 +222,7 @@ func (manager *Manager) SendGroup(group string, message []byte) {
 // 广播
 func (manager *Manager) SendAll(message []byte) {
 	data := &BroadCastMessageData{
-		Message:    message,
+		Message: message,
 	}
 	manager.BroadCastMessage <- data
 }
@@ -259,14 +262,14 @@ func (manager *Manager) Info() map[string]interface{} {
 
 // 初始化 wsManager 管理器
 var WebsocketManager = Manager{
-	Group: make(map[string]map[string]*Client),
-	Register:    make(chan *Client, 128),
-	UnRegister:  make(chan *Client, 128),
-	GroupMessage:   make(chan *GroupMessageData, 128),
-	Message:   make(chan *MessageData, 128),
+	Group:            make(map[string]map[string]*Client),
+	Register:         make(chan *Client, 128),
+	UnRegister:       make(chan *Client, 128),
+	GroupMessage:     make(chan *GroupMessageData, 128),
+	Message:          make(chan *MessageData, 128),
 	BroadCastMessage: make(chan *BroadCastMessageData, 128),
-	groupCount: 0,
-	clientCount: 0,
+	groupCount:       0,
+	clientCount:      0,
 }
 
 // gin 处理 websocket handler
@@ -287,10 +290,10 @@ func (manager *Manager) WsClient(ctx *gin.Context) {
 	}
 
 	client := &Client{
-		Id:     uuid.NewV4().String(),
-		Group:  ctx.Param("channel"),
-		Socket: conn,
-		Message:   make(chan []byte, 1024),
+		Id:      uuid.NewV4().String(),
+		Group:   ctx.Param("channel"),
+		Socket:  conn,
+		Message: make(chan []byte, 1024),
 	}
 
 	manager.RegisterClient(client)
@@ -305,7 +308,7 @@ func (manager *Manager) WsClient(ctx *gin.Context) {
 func TestSendGroup() {
 	for {
 		time.Sleep(time.Second * 20)
-		WebsocketManager.SendGroup("leffss", []byte("SendGroup message ----" + time.Now().Format("2006-01-02 15:04:05")))
+		WebsocketManager.SendGroup("leffss", []byte("SendGroup message ----"+time.Now().Format("2006-01-02 15:04:05")))
 	}
 }
 
