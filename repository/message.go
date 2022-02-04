@@ -40,7 +40,7 @@ func (m MessageRepository) SaveRoomMessage(msg *model.Message) error {
 
 func (m MessageRepository) GetRoomMessageList(room string) ([]model.Message, error) {
 	var msgList []model.Message
-	err := m.db.Model(&model.Message{}).Where("room=?", room).Order("created_at desc").Find(&msgList).Limit(20).Error
+	err := m.db.Model(&model.Message{}).Where("room=?", room).Order("id").Find(&msgList).Limit(20).Error
 	if err != nil {
 		log.Println("get msgList failed room=%+v err=%v", room, err)
 		return nil, err
