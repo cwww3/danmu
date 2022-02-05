@@ -57,7 +57,8 @@ func main() {
 				c.JSON(http.StatusBadRequest, nil)
 				return
 			}
-			room.Url = "http://110.42.134.163/live?app=cwww"
+			//room.Url = "http://110.42.134.163/live?app=cwww"
+			room.Url = "rtmp://110.42.134.163/cwww3"
 			_, err = repository.GetMySQLRepository().SaveRoom(room)
 			if err != nil {
 				app.Failure(c)
