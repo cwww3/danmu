@@ -75,7 +75,7 @@ func (c *Client) Read() {
 			log.Println("unmarshal msg failed err=%v", err)
 			continue
 		}
-		err = repository.GetMessageRepository().SaveRoomMessage(&msg)
+		err = repository.GetMySQLRepository().SaveRoomMessage(&msg)
 		if err != nil {
 			log.Println("insert msg failed msg=%+v err=%v", msg, err)
 		}

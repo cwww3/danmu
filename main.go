@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"danmu/app"
+	"danmu/model"
 	"danmu/repository"
 	"danmu/ws"
 	"fmt"
@@ -26,7 +28,7 @@ func main() {
 	//go ws.TestSendGroup()
 	//go ws.TestSendAll()
 
-	repository.SetUpMessageRepository()
+	repository.SetUpMySQLRepository()
 
 	router := gin.Default()
 	//router.LoadHTMLGlob("web/*")
@@ -39,13 +41,70 @@ func main() {
 	})
 	router.GET("/:room/message", func(c *gin.Context) {
 		room := c.Param("room")
-		msgList,err := repository.GetMessageRepository().GetRoomMessageList(room)
+		msgList, err := repository.GetMySQLRepository().GetRoomMessageList(room)
 		if err != nil {
-			c.JSON(http.StatusBadRequest,nil)
+			c.JSON(http.StatusBadRequest, nil)
 			return
 		}
-		c.JSON(http.StatusOK,gin.H{"msgList":msgList})
+		c.JSON(http.StatusOK, gin.H{"msgList": msgList})
 	})
+
+	{
+		router.POST("/room", func(c *gin.Context) {
+			room := new(model.Room)
+			err := c.Bind(room)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, nil)
+				return
+			}
+			room.Url = "http://110.42.134.163/live?app=cwww"
+			_, err = repository.GetMySQLRepository().SaveRoom(room)
+			if err != nil {
+				app.Failure(c)
+				return
+			}
+			app.Success(c, room)
+		})
+		router.GET("/room", func(c *gin.Context) {
+			user := c.Query("user")
+			if len(user) == 0 {
+				app.Failure(c)
+				return
+			}
+			room, err := repository.GetMySQLRepository().GetRoomByUser(user)
+			if err != nil {
+				app.Failure(c)
+				return
+			}
+			app.Success(c, room)
+		})
+		router.GET("/liveon/room", func(c *gin.Context) {
+			app.Success(c, repository.GetMemoryRepository().GetList())
+		})
+		router.POST("/liveon/:user", func(c *gin.Context) {
+			user := c.Param("user")
+			if len(user) == 0 {
+				app.Failure(c)
+				return
+			}
+			room, err := repository.GetMySQLRepository().GetRoomByUser(user)
+			if err != nil {
+				app.Failure(c)
+				return
+			}
+			repository.GetMemoryRepository().Save(user, room)
+			app.Success(c, nil)
+		})
+		router.POST("/liveoff/:user", func(c *gin.Context) {
+			user := c.Param("user")
+			if len(user) == 0 {
+				app.Failure(c)
+				return
+			}
+			repository.GetMemoryRepository().Delete(user)
+			app.Success(c, nil)
+		})
+	}
 
 	wsGroup := router.Group("/ws")
 	{
