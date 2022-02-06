@@ -79,8 +79,8 @@ func (c *Client) Read() {
 		if err != nil {
 			log.Printf("insert msg failed msg=%+v err=%v\n", msg, err)
 		}
-
-		WebsocketManager.SendGroup("default", message)
+		// TODO
+		WebsocketManager.SendGroup(msg.Room, message)
 	}
 }
 
