@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"time"
 )
@@ -58,12 +59,19 @@ func main() {
 				return
 			}
 			//room.Url = "http://110.42.134.163/live?app=cwww"
-			room.Url = "rtmp://110.42.134.163/cwww3"
+			room.Url = "rtmp://110.42.134.163/" + room.Name
 			_, err = repository.GetMySQLRepository().SaveRoom(room)
 			if err != nil {
 				app.Failure(c)
 				return
 			}
+			// nginx
+			err = nginxConfig(room.Name)
+			if err != nil {
+				app.Failure(c)
+				return
+			}
+
 			app.Success(c, room)
 		})
 		router.GET("/room", func(c *gin.Context) {
@@ -145,4 +153,24 @@ func loadConfig() {
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %w \n", err))
 	}
+}
+
+func nginxConfig(room string) error {
+	//创建nginx文件
+	text := "\\                application %v {\\n                    live on;\\n                    gop_cache on; #打开 GOP 缓存，减少首屏等待时间\\n                }"
+	text = fmt.Sprintf(text, room)
+	text = fmt.Sprintf("3a %v", text)
+	c := exec.Command("sed", "-i", text, "/etc/nginx/conf.d/live/cwww3.conf")
+	data, err := c.CombinedOutput()
+	if err != nil {
+		log.Println("update nginx file failed err", string(data))
+		return err
+	}
+
+	cc := exec.Command("service", "nginx", "reload")
+	data, err = cc.CombinedOutput()
+	if err != nil {
+		log.Println("nginx reload failed err", string(data))
+	}
+	return err
 }

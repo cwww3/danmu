@@ -64,7 +64,7 @@ func (c *Client) Read() {
 		messageType, message, err := c.Socket.ReadMessage()
 		if err != nil || messageType == websocket.CloseMessage {
 			if err != nil {
-				log.Println("read err=%v", err)
+				log.Printf("read err=%v\n", err)
 			}
 			break
 		}
@@ -72,12 +72,12 @@ func (c *Client) Read() {
 		// TODO 获取room 持久化
 		var msg model.Message
 		if err = json.Unmarshal(message, &msg); err != nil {
-			log.Println("unmarshal msg failed err=%v", err)
+			log.Printf("unmarshal msg failed err=%v\n", err)
 			continue
 		}
 		err = repository.GetMySQLRepository().SaveRoomMessage(&msg)
 		if err != nil {
-			log.Println("insert msg failed msg=%+v err=%v", msg, err)
+			log.Printf("insert msg failed msg=%+v err=%v\n", msg, err)
 		}
 
 		WebsocketManager.SendGroup("default", message)

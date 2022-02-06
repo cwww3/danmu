@@ -43,7 +43,7 @@ func (m MySQLRepository) GetRoomMessageList(room string) ([]model.Message, error
 	var msgList []model.Message
 	err := m.db.Model(&model.Message{}).Where("room=?", room).Order("id").Find(&msgList).Limit(20).Error
 	if err != nil {
-		log.Println("get msgList failed room=%+v err=%v", room, err)
+		log.Printf("get msgList failed room=%+v err=%v\n", room, err)
 		return nil, err
 	}
 	return msgList, nil
