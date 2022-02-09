@@ -29,10 +29,10 @@ func SetUpMySQLRepository() {
 	mysqlRepository.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{SingularTable: true},
 	})
-	mysqlRepository.db.AutoMigrate(new(model.Room))
 	if err != nil {
 		panic("failed to connect database")
 	}
+	autoMigrate()
 }
 
 func (m MySQLRepository) SaveRoomMessage(msg *model.Message) error {
@@ -58,4 +58,13 @@ func (m MySQLRepository) GetRoomByUser(user string) (*model.Room, error) {
 	room := new(model.Room)
 	err := m.db.Model(&model.Room{}).First(room, "user = ?", user).Error
 	return room, err
+}
+
+func (m MySQLRepository) SaveUser(user *model.User) (uint, error) {
+	err := m.db.Model(&model.User{}).Save(user).Error
+	return user.ID, err
+}
+
+func autoMigrate() {
+	mysqlRepository.db.AutoMigrate(new(model.User))
 }

@@ -32,3 +32,10 @@ func Success(c *gin.Context, data interface{}) {
 func Failure(c *gin.Context) {
 	c.JSON(http.StatusOK, FailureResponse)
 }
+
+func FailureWithErr(c *gin.Context, err error) {
+	c.JSON(http.StatusOK, Response{
+		Code: "00001",
+		Msg:  err.Error(),
+	})
+}

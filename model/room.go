@@ -8,3 +8,8 @@ type Room struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
+
+type User struct {
+	gorm.Model
+	Name string `json:"name"`
+}

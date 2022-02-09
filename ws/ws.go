@@ -69,7 +69,6 @@ func (c *Client) Read() {
 			break
 		}
 		log.Printf("client [%s] receive message: %s", c.Id, string(message))
-		// TODO 获取room 持久化
 		var msg model.Message
 		if err = json.Unmarshal(message, &msg); err != nil {
 			log.Printf("unmarshal msg failed err=%v\n", err)
@@ -79,7 +78,6 @@ func (c *Client) Read() {
 		if err != nil {
 			log.Printf("insert msg failed msg=%+v err=%v\n", msg, err)
 		}
-		// TODO
 		WebsocketManager.SendGroup(msg.Room, message)
 	}
 }
@@ -299,9 +297,6 @@ func (manager *Manager) WsClient(ctx *gin.Context) {
 	manager.RegisterClient(client)
 	go client.Read()
 	go client.Write()
-	//time.Sleep(time.Second * 15)
-	// 测试单个 client 发送数据
-	//manager.Send(client.Id, client.Group, []byte("Send message ----" + time.Now().Format("2006-01-02 15:04:05")))
 }
 
 // 测试组广播
