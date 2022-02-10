@@ -12,101 +12,81 @@ import (
 )
 
 func RegisterRoom(router *gin.Engine) {
+	// 获取直播间历史消息
 	router.GET("/:room/message", func(c *gin.Context) {
 		room := c.Param("room")
 		msgList, err := repository.GetMySQLRepository().GetRoomMessageList(room)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			app.FailureWithErr(c, err)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"msgList": msgList})
 	})
+	// 开通直播间
 	router.POST("/room", func(c *gin.Context) {
 		room := new(model.Room)
 		err := c.Bind(room)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			app.FailureWithErr(c, err)
 			return
 		}
-		//room.Url = "http://110.42.134.163/live?app=cwww"
 		room.Url = "rtmp://110.42.134.163/" + room.Name
 		_, err = repository.GetMySQLRepository().SaveRoom(room)
 		if err != nil {
-			app.Failure(c)
+			app.FailureWithErr(c, err)
 			return
 		}
-		// nginx
+		// 创建nginx配置
 		err = nginxConfig(room.Name)
 		if err != nil {
-			app.Failure(c)
+			app.FailureWithErr(c, err)
 			return
 		}
 
 		app.Success(c, room)
 	})
-	// TODO  替代 get room
+	// 获取直播间
 	router.GET("/:user/room", func(c *gin.Context) {
 		user := c.Param("user")
+		if len(user) == 0 {
+			app.FailureWithErr(c, app.ParamErr)
+		}
 		room, err := repository.GetMySQLRepository().GetRoomByUser(user)
 		if err != nil {
-			app.Failure(c)
+			app.FailureWithErr(c, err)
 			return
 		}
 		app.Success(c, room)
 	})
+	// 获取开播的直播间
 	router.GET("/liveon/room", func(c *gin.Context) {
 		app.Success(c, repository.GetMemoryRepository().GetList())
 	})
-
-	// TODO  替代 post /liveon/:user
+	// 开始直播
 	router.POST("/:user/on", func(c *gin.Context) {
 		user := c.Param("user")
 		if len(user) == 0 {
-			app.Failure(c)
+			app.FailureWithErr(c, app.ParamErr)
 			return
 		}
 		room, err := repository.GetMySQLRepository().GetRoomByUser(user)
 		if err != nil {
-			app.Failure(c)
+			app.FailureWithErr(c, err)
 			return
 		}
 		repository.GetMemoryRepository().Save(user, room)
 		app.Success(c, nil)
 	})
-	router.POST("/liveon/:user", func(c *gin.Context) {
-		user := c.Param("user")
-		if len(user) == 0 {
-			app.Failure(c)
-			return
-		}
-		room, err := repository.GetMySQLRepository().GetRoomByUser(user)
-		if err != nil {
-			app.Failure(c)
-			return
-		}
-		repository.GetMemoryRepository().Save(user, room)
-		app.Success(c, nil)
-	})
-	// TODO  替代 post /liveoff/:user
+	// 关闭直播
 	router.POST("/:user/off", func(c *gin.Context) {
 		user := c.Param("user")
 		if len(user) == 0 {
-			app.Failure(c)
+			app.FailureWithErr(c, app.ParamErr)
 			return
 		}
 		repository.GetMemoryRepository().Delete(user)
 		app.Success(c, nil)
 	})
-	router.POST("/liveoff/:user", func(c *gin.Context) {
-		user := c.Param("user")
-		if len(user) == 0 {
-			app.Failure(c)
-			return
-		}
-		repository.GetMemoryRepository().Delete(user)
-		app.Success(c, nil)
-	})
-
 }
 
 func nginxConfig(room string) error {

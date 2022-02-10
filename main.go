@@ -24,18 +24,13 @@ func main() {
 	go ws.WebsocketManager.SendGroupService() // 可启动多个
 
 	router := gin.Default()
-
 	router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome Gin Server")
 	})
 
 	controller.RegisterRoom(router)
 	controller.RegisterLogin(router)
-
-	wsGroup := router.Group("/ws")
-	{
-		wsGroup.GET("/:channel", ws.WebsocketManager.WsClient)
-	}
+	controller.RegisterWebSocket(router)
 
 	srv := &http.Server{
 		Addr:    ":8888",
